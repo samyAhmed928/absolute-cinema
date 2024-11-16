@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MoviesApi.Models;
@@ -40,6 +41,7 @@ namespace MoviesApi.Controllers
 			return Ok(movies);
 		}
 		[HttpPost]
+		[Authorize(Roles ="Admin")]
 		public async Task<IActionResult> CreateAsync([FromForm]CreateMovieDto dto)
 		{
 			if (dto.Poster==null)

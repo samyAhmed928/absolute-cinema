@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -5,6 +6,8 @@ using MoviesApi.Data;
 using MoviesApi.Helpers;
 using MoviesApi.Models;
 using MoviesApi.Services;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -15,6 +18,7 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddTransient<IGenreService, GenreService>();
 builder.Services.AddTransient<IMoviesService, MoviesService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddAutoMapper(typeof(Program));
 
@@ -24,6 +28,25 @@ builder.Services.AddDbContext<ApplictionDbContext>(options =>
 	options.UseSqlServer(
 		 builder.Configuration.GetConnectionString("DefultConnection")
 	)) ;
+
+builder.Services.AddAuthentication(options => {
+	options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+	options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(o =>
+	{
+		o.RequireHttpsMetadata = false;
+		o.SaveToken = false;
+		o.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuerSigningKey = true,
+			ValidateIssuer = true,
+			ValidateAudience = true,
+			ValidateLifetime = true,
+			ValidIssuer = builder.Configuration["JWT:Issuer"],
+			ValidAudience = builder.Configuration["JWT:Audience"],
+			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"]))
+		};
+	});
 builder.Services.AddCors();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -85,6 +108,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(c=>c.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
