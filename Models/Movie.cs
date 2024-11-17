@@ -14,5 +14,12 @@
 		public int GenreId {  get; set; }
 		public Genre Genre { get; set; }
 
+		public string AdminId { get; set; }
+		public ApplicationUser Admin { get; set; }
+
+		public IList<MovieRating> movieRatings { get; set; }=new List<MovieRating>();
+		public IList<MovieReview> MovieReviews { get; set; }=new List<MovieReview>();
+
+
 	}
 }

@@ -23,8 +23,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddAutoMapper(typeof(Program));
 
 builder.Services.Configure<JWT>(builder.Configuration.GetSection("JWT"));
-builder.Services.AddIdentity<ApplicationUser,IdentityRole>().AddEntityFrameworkStores<ApplictionDbContext>();
-builder.Services.AddDbContext<ApplictionDbContext>(options =>
+builder.Services.AddIdentity<ApplicationUser,IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
 	options.UseSqlServer(
 		 builder.Configuration.GetConnectionString("DefultConnection")
 	)) ;

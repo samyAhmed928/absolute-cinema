@@ -11,7 +11,7 @@ using MoviesApi.Data;
 
 namespace MoviesApi.Migrations
 {
-    [DbContext(typeof(ApplictionDbContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     [Migration("20241115185323_AddIdentity")]
     partial class AddIdentity
     {

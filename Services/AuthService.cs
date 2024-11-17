@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Humanizer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MoviesApi.Helpers;
 using MoviesApi.Models;
+using NuGet.Common;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -41,7 +44,8 @@ namespace MoviesApi.Services
 			};
 
 			var result=await _usermanger.CreateAsync(user,model.Password);
-
+			
+			
 			if (!result.Succeeded)
 			{
 				string errors = string.Empty;
@@ -80,6 +84,7 @@ namespace MoviesApi.Services
 
 			authModel.IsAuthenticated = true;
 			authModel.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityTokens);
+
 			authModel.Email = user.Email;
 			authModel.UserName = user.UserName;
 			authModel.ExpireOn = jwtSecurityTokens.ValidTo;
@@ -102,10 +107,10 @@ namespace MoviesApi.Services
 
 			var claims = new[]
 			{
-				new Claim(JwtRegisteredClaimNames.Sub,user.UserName),
+				new Claim(JwtRegisteredClaimNames.Sub,user.Id),
 				new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
 				new Claim(JwtRegisteredClaimNames.Email,user.Email),
-				new Claim("uid",user.Id)
+				new Claim(ClaimTypes.NameIdentifier,user.Id)
 			}
 			.Union(UserClaims)
 			.Union(roleClaims);
@@ -123,21 +128,46 @@ namespace MoviesApi.Services
 			return JwtSecurityToken;
 		}
 
-		public async Task<string> AddRoleAsync(AddRoleModel model)
+		public async Task<AuthModel> AddRoleAsync(AddRoleModel model)
 		{
+			var authModel = new AuthModel();
+			// Check if the role exists
+			if (!await _roleManger.RoleExistsAsync(model.RoleName))
+			{
+				authModel.Message = "Role does not exist.";
+				return authModel;
+			}
+
+			// Find the user by ID
 			var user = await _usermanger.FindByIdAsync(model.UserId);
-			if (user is null|| !await _roleManger.RoleExistsAsync(model.RoleName))
+			if (user == null)
 			{
-				return "Invalid user ID or Role";
-			}
-			if (await _usermanger.IsInRoleAsync(user,model.RoleName))
-			{
-				return "User already assigned to this role";
+				authModel.Message = "User not found.";
+				return authModel;
 			}
 
+			// Add the role to the user
 			var result = await _usermanger.AddToRoleAsync(user, model.RoleName);
+			if (!result.Succeeded)
+			{
+				authModel.Message = "Failed to add role.";
+				return authModel;
+			}
 
-			return result.Succeeded ? string.Empty : "Something went Wrong";
+			// Generate a new token for the user with the updated roles
+			var jwtSecurityTokens = await CreateToken(user);
+			var roleslist = await _usermanger.GetRolesAsync(user);
+
+			authModel.IsAuthenticated = true;
+			authModel.Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityTokens);
+
+			authModel.Email = user.Email;
+			authModel.UserName = user.UserName;
+			authModel.ExpireOn = jwtSecurityTokens.ValidTo;
+			authModel.Roles = roleslist.ToList();
+
+			return authModel;
 		}
+
 	}
 }

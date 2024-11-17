@@ -3,7 +3,7 @@ using MoviesApi.Models;
 
 namespace MoviesApi.Services
 {
-	public class GenreService(ApplictionDbContext _context) : IGenreService
+	public class GenreService(ApplicationDbContext _context) : IGenreService
 	{
 		public async Task<Genre> Add(Genre genre)
 		{

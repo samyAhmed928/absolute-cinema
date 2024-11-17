@@ -2,7 +2,7 @@
 
 namespace MoviesApi.Services
 {
-	public class MoviesService(ApplictionDbContext _context) : IMoviesService
+	public class MoviesService(ApplicationDbContext _context) : IMoviesService
 	{
 
 		public async Task<IEnumerable<Movie>> GetAll(int genreId = 0)
@@ -11,13 +11,18 @@ namespace MoviesApi.Services
 				        .Where(m=>m.GenreId == genreId||genreId==0)
 						.OrderByDescending(m => m.Rate)
 						.Include(m => m.Genre)
+						.Include(m=>m.movieRatings)
+						.Include(m=>m.MovieReviews)
 						.ToListAsync();
 			return movies;
 		}
 
 		public async Task<Movie> GetById(int id)
 		{
-			return await _context.Movies.Include(m => m.Genre).SingleOrDefaultAsync(m => m.Id == id);
+			return await _context.Movies.Include(m => m.Genre)
+				.Include(m=>m.movieRatings)
+				.Include(m=>m.MovieReviews)
+				.SingleOrDefaultAsync(m => m.Id == id);
 		}
 
 		public async Task<Movie> Add(Movie movie)
@@ -29,12 +34,19 @@ namespace MoviesApi.Services
 
 		public Movie Update(Movie movie)
 		{
-			throw new NotImplementedException();
+			movie.Rate = movie.movieRatings.Any() ?
+				movie.movieRatings.Average(r => r.Rating)
+				: 0;
+			 _context.Update(movie);
+			_context.SaveChanges();
+			return movie;
 		}
 
 		public Movie Delete(Movie movie)
 		{
-			throw new NotImplementedException();
+			_context.Remove(movie);
+			_context.SaveChanges();
+			return movie;
 		}
 
 	}

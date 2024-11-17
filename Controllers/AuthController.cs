@@ -57,14 +57,18 @@ namespace MoviesApi.Controllers
 				return BadRequest(ModelState);
 			}
 			var result = await _authservice.AddRoleAsync(model);
-			if (!string.IsNullOrEmpty(result))
+			if (!result.IsAuthenticated)
 			{
-				return BadRequest(result);
+				return BadRequest(result.Message);
 			}
 
-			return Ok(model);
-	
-			
+			return Ok(new
+			{
+				token = result.Token,
+				exprieson = result.ExpireOn
+			});
+
+
 		}
 	}
 }
